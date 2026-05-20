@@ -1,0 +1,35 @@
+name: Import initial source
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download source archive
+        run: |
+          curl -fL -o /tmp/source.zip https://tmpfiles.org/dl/wAwzlDYeeXXh/wco_call_dashboard_initial.zip
+          mkdir -p /tmp/source
+          unzip -q /tmp/source.zip -d /tmp/source
+      - name: Replace repository contents
+        run: |
+          find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+          cp -R /tmp/source/. .
+      - name: Commit imported source
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git commit -m "Import call dashboard source"
+          git push
